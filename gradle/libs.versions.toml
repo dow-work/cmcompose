@@ -8,8 +8,6 @@ lifecycleRuntimeKtx = "2.8.7"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
-#→ ui-test-compose / espresso
-#-> robolectric
 
 #di
 hilt = "2.48"
