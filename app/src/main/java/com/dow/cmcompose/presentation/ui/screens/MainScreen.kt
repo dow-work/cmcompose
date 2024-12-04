@@ -24,7 +24,6 @@ fun MainScreen() {
         topBar = { DynamicTopAppBar(navController = navController, homeListState) },
         bottomBar = { BottomNavigationBar(navController = navController) }
     ) { innerPadding ->
-        Timber.d(">>>>>>>>> $innerPadding")
         NavHost(
             navController = navController,
             startDestination = BottomMenus.HOME.name,
