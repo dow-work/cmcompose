@@ -24,14 +24,11 @@ class HomeViewModel @Inject constructor(
     val slideItems: StateFlow<List<MovieDetail>> = _slideItems
 
     init {
-        viewModelScope.launch {
-            getSectionAndItems()
-            getSlideDataItems()
-        }
+        getSectionAndItems()
+        getSlideDataItems()
     }
 
     fun refresh() {
-        Timber.d("tag", "refresh")
         getSectionAndItems()
         getSlideDataItems()
     }
@@ -43,7 +40,6 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun getSectionAndItems() {
-        Timber.d("getSectionAndItems")
         viewModelScope.launch {
             _sectionItems.value = fetchMoviesUseCase.getSectionAndItems()
         }
