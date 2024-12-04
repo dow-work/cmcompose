@@ -43,7 +43,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun getSectionAndItems() {
-        Timber.d("processSectionAndItems")
+        Timber.d("getSectionAndItems")
         viewModelScope.launch {
             _sectionItems.value = fetchMoviesUseCase.getSectionAndItems()
         }
