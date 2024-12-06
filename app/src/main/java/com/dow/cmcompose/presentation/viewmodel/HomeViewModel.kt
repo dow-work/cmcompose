@@ -24,8 +24,7 @@ class HomeViewModel @Inject constructor(
     val slideItems: StateFlow<List<MovieDetail>> = _slideItems
 
     init {
-        getSectionAndItems()
-        getSlideDataItems()
+        refresh()
     }
 
     fun refresh() {
