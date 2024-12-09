@@ -40,10 +40,9 @@ jobs:
           to: ${{vars.EMAIL_SEND_LIST}}
           from: ${{ vars.EMAIL }}
           body: |
-              Hello,
-  
-              The deployment process for the repository ${{ github.repository }} has been successfully completed.
-  
+              Hello...
+              The merge process for repository ${{ github.repository }} failed.
+              
               Commit: ${{ github.sha }}
               Commit link: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
               Branch: ${{ github.ref }}
