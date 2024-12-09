@@ -89,3 +89,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
+
+tasks.register("printVersionName") {
+    println(android.defaultConfig.versionName)
+}
+
+tasks.register("printVersionCode") {
+    println(android.defaultConfig.versionCode)
+}
