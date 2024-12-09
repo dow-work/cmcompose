@@ -1,0 +1,55 @@
+name: Send Report
+
+on:
+  workflow_call:
+    inputs:
+      ci_status:
+        description: 'CI Job status'
+        required: true
+        type: string
+      artifact_name:
+        description: 'Artifact name'
+        required: true
+        type: string
+    
+jobs:
+  send_email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Print Email List
+        run: echo "Sending email to ${{ vars.EMAIL_SEND_LIST }} , ${{ vars.EMAIL }}/${{secrets.EMAIL_PWD}} .. ${{ github.repository }}-${{ github.sha }}-${{ github.ref }} "
+        
+      - name: Download CI Reports
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: reports
+          
+      - name: Send mail
+        if: inputs.ci_status == 'failure'
+        uses: dawidd6/action-send-mail@v4
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465          # SSL  465, TLS 587
+          username: ${{vars.EMAIL}}
+          password: ${{vars.GMAIL_APP_PWD}}
+          subject: Deployment Completed - ${{ github.repository }} 
+          to: ${{vars.EMAIL_SEND_LIST}}
+          from: ${{ vars.EMAIL }}
+          body: |
+              Hello,
+  
+              The deployment process for the repository ${{ github.repository }} has been successfully completed.
+  
+              Commit: ${{ github.sha }}
+              Commit link: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+              Branch: ${{ github.ref }}
+              Result: ${{ inputs.ci_status }}
+
+          attachments: |
+              reports/build_log.txt
+              reports/lint_log.txt
+              reports/test_log.txt
