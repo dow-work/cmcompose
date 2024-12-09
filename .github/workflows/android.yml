@@ -1,0 +1,63 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_lint_test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    - name: Build with Gradle
+      run: ./gradlew build
+   
+    - name: Build with Gradle
+      id: gradle_build
+      run: ./gradlew assembleDebug
+      # continue true, break false   
+      continue-on-error: true
+
+    - name: Run Lint
+      id: lint
+      run: ./gradlew lint
+      continue-on-error: true
+
+    - name: Run Tests
+      id: tests
+      run: ./gradlew testDebugUnitTest
+      continue-on-error: true
+
+    - name: Save Logs
+      run: |
+        mkdir -p reports
+        ./gradlew build > reports/build_log.txt 2>&1 || true
+        ./gradlew lint > reports/lint_log.txt 2>&1 || true
+        ./gradlew testDebugUnitTest > reports/test_log.txt 2>&1 || true
+
+    # artifact upload (build, Lint, Test log)
+    - name: Upload Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-and-lint-reports
+        path: reports
+        
+
+  send_email:
+    needs: build_lint_test  
+    uses: ./.github/workflows/send_report.yml
+    with:
+      ci_status: ${{ needs.build_lint_test.result }}
+      artifact_name: build-and-lint-reports
