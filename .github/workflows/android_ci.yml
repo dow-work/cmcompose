@@ -64,7 +64,8 @@ jobs:
             -d '{"ref":"main"}'
             
   send_email:
-    needs: build_lint_test  
+    needs: build_lint_test
+    if: needs.build_lint_test.result == 'failure'
     uses: ./.github/workflows/send_report.yml
     with:
       ci_status: ${{ needs.build_lint_test.result }}
