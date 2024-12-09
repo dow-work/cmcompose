@@ -1,0 +1,115 @@
+name: deploy to Google Drive
+
+on:
+  push:
+    branches: [ "deploy" ]
+    
+  workflow_dispatch:
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    outputs: 
+      deploy_file_name: ${{ env.deploy_file_name }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Grant execute permission for Gradle
+        run: chmod +x ./gradlew
+
+      - name: Extract versionName and versionCode
+        id: version
+        run: |
+          echo "version_name=$( ./gradlew -q app:printVersionName )" >> $GITHUB_ENV
+          echo "version_code=$( ./gradlew -q app:printVersionCode )" >> $GITHUB_ENV
+
+      - name: Print extracted versions
+        run: |
+          echo "Version Name: $version_name"
+          echo "Version Code: $version_code"
+
+      - name: DeployFileName
+        run: |
+          echo "deploy_file_name=app-debug-v${{ env.version_name }}.${{ env.version_code }}" >> $GITHUB_ENV
+
+      - name: Build APK
+        run: ./gradlew assembleDebug   #assembleRelease
+
+      - name: Rename APK with Version
+        run: |
+          mkdir -p deploy-apk
+      
+          if [ -d "deploy-apk" ]; then
+            echo "Directory 'deploy-apk' was successfully created."
+          else
+            echo "Failed to create 'deploy-apk' directory."
+            exit 1
+          fi
+      
+          if cp app/build/outputs/apk/debug/app-debug.apk deploy-apk/${{ env.deploy_file_name }}.apk; then
+            echo "APK file successfully copied to 'deploy-apk'."
+          else
+            echo "Failed to copy APK file. Exiting..."
+            exit 1
+          fi
+          
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.deploy_file_name }}
+          path: deploy-apk/*.apk
+
+  upload_to_gdrive:
+    needs: deploy
+    if: needs.deploy.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.deploy.outputs.deploy_file_name }}
+          path: deploy-apk/*.apk
+
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+          
+      - name: Verify check rclone Path
+        run: |
+          mkdir -p ~/.config/rclone
+          
+          if [ -d ~/.config/rclone ]; then
+                echo "Directory ~/.config/rclone successfully created."
+                printf "%s" "${{ secrets.RCLONE_CONF }}" | base64 --decode > ~/.config/rclone/rclone.conf
+                chmod 600 ~/.config/rclone/rclone.conf
+                echo "rclone.conf file successfully created."
+              else
+                echo "Failed to create directory ~/.config/rclone."
+                exit 1
+              fi
+          
+      - name: Verify rclone.conf File
+        run: |
+          if [ -f ~/.config/rclone/rclone.conf ]; then
+            echo "rclone.conf file exists."
+          else
+            echo "rclone.conf file not found."
+            exit 1
+          fi
+          
+      - name: Remote Path Check
+        run: |
+          rclone lsd ${{ vars.RELEASE_PATH }} || echo "Failed to list remote path. Please check the remote configuration."
+
+      - name: Upload APK to Google Drive
+        run: |
+          rclone copy deploy-apk/*.apk ${{vars.RELEASE_PATH}}        
