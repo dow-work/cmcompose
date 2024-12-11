@@ -1,11 +1,7 @@
 name: deploy to Google Drive
 
 on:
-  push:
-    branches: [ "deploy" ]
-    
   workflow_dispatch:
-
 
 jobs:
   deploy:
